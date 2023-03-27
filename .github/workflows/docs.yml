@@ -17,7 +17,7 @@ jobs:
 
     - name: Generate Go documentation and update README
       run: |
-        go install github.com/posener/goreadme/cmd/goreadmelatest
+        go install github.com/posener/goreadme/cmd/goreadme@latest
 
         goreadme --recursive=true \
           --credit=false \

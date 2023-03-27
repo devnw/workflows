@@ -25,6 +25,7 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: ${{ vars.GO_VERSION }}
+      - uses: actions/setup-python@v4
       - name: Pre-commit hooks
         uses: pre-commit/action@v3.0.0
       - name: Execute Generate Commands

@@ -3,6 +3,9 @@ name: Update README with Go documentation
 on:
   workflow_call:
 
+env:
+  GO_VERSION: ${{ vars.GO_VERSION }}
+
 jobs:
   update-readme:
     runs-on: ubuntu-latest

@@ -6,7 +6,6 @@ on:
 env:
   GOPRIVATE: go.devnw.com,go.diver.dev,go.atomizer.io,go.secteria.com,go.structs.dev
   GH_ACCESS_TOKEN: ${{ secrets.GH_PAT }}
-  GO_VERSION: ${{ vars.GO_VERSION }}
 
 jobs:
   build:
@@ -25,7 +24,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v4
         with:
-          go-version: $GO_VERSION
+          go-version: ${{ vars.GO_VERSION }}
       - name: Pre-commit hooks
         uses: pre-commit/action@v3.0.0
       - name: Execute Generate Commands

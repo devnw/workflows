@@ -24,7 +24,7 @@ jobs:
           --constants=true \
           --functions=true \
           --types=true \
-          --factories \
+          --factories=true \
           --variabless=true > README.md
 
     - name: Create or update pull request

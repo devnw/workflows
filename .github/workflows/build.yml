@@ -75,7 +75,7 @@ jobs:
       - name: Upload Fuzz Results
         uses: actions/upload-artifact@v3
         with:
-          name: testdata/fuzz
+          name: fuzz-results
           path: testdata/fuzz
   pre-release:
     name: "Pre Release"

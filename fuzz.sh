@@ -8,7 +8,7 @@ files=$(grep -r --include='**_test.go' --files-with-matches 'func Fuzz' .)
 
 for file in ${files}
 do
-	funcs=$(grep -oP 'func \K(Fuzz\w*)' $file)
+	funcs=$(grep -o 'func Fuzz\w*' $file | sed 's/func //')
 	for func in ${funcs}
 	do
 		echo "Fuzzing $func in $file"

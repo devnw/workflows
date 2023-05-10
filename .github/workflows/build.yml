@@ -55,6 +55,10 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.txt
+      - name: Install Go Vuln Check and Execute
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
   fuzz-test:
     name: Fuzz test
     runs-on: ubuntu-latest

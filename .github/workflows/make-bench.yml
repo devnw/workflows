@@ -5,10 +5,7 @@ on:
 
 env:
   GOPRIVATE: go.devnw.com,go.atomizer.io,go.codepros.org,go.spyder.org
-  GO_VERSION: ${{vars.GO_VERSION}}
-  GIT_CREDENTIALS: ${{secrets.GIT_CREDENTIALS}}
-  GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-  ALERT_CC_USERS: ${{vars.ALERT_CC_USERS}}
+  GH_ACCESS_TOKEN: ${{ secrets.GH_PAT }}
 
 jobs:
   release:
@@ -17,7 +14,7 @@ jobs:
     steps:
       - uses: de-vri-es/setup-git-credentials@v2
         with:
-          credentials: ${{env.GIT_CREDENTIALS}}
+          credentials: ${{secrets.GIT_CREDENTIALS}}
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,7 +22,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: ${{env.GO_VERSION}}
+          go-version: ${{ vars.GO_VERSION }}
 
       - name: Benchmark
         run: make bench-ci
@@ -43,9 +40,9 @@ jobs:
           tool: 'go'
           output-file-path: output.txt
           benchmark-data-dir-path: dev/bench
-          github-token: ${{env.GITHUB_TOKEN}}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
           alert-threshold: '200%'
           comment-on-alert: true
           fail-on-alert: true
-          alert-comment-cc-users: '${{env.ALERT_CC_USERS}}'
+          alert-comment-cc-users: '${{ vars.ALERT_CC_USERS }}'

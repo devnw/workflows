@@ -19,6 +19,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '${{ vars.PYTHON_VERSION }}'
+          check-latest: true
+
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
@@ -26,25 +31,3 @@ jobs:
 
       - name: Release
         run: make release-ci
-
-      - name: Upload Test Coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: coverage
-          path: coverage.txt
-
-      - name: Upload Fuzz Results
-        uses: actions/upload-artifact@v3
-        with:
-          name: fuzz-results
-          path: testdata/fuzz
-
-      - name: Create Github Release from Tag
-        uses: "marvinpinto/action-automatic-releases@latest"
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: false
-          files: |
-            LICENSE
-            README.md
-            coverage.txt

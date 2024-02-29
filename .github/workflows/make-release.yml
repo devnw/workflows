@@ -4,9 +4,7 @@ on:
   workflow_call:
 
 env:
-  GOPRIVATE: go.devnw.com,go.atomizer.io,go.codepros.org,go.spyder.org
-  GH_ACCESS_TOKEN: ${{ secrets.GH_PAT }}
-  GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+  GOPRIVATE: go.spyder.org
 
 jobs:
   release:

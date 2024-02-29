@@ -10,10 +10,8 @@ jobs:
   build:
     name: Make Build
     strategy:
-      matrix:
-        platform: [ubuntu-latest, macos-latest, windows-latest]
       fail-fast: true
-    runs-on: ${{ matrix.platform }}
+    runs-on: ubuntu-latest
     steps:
       - uses: de-vri-es/setup-git-credentials@v2
         with:

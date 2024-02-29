@@ -4,8 +4,7 @@ on:
   workflow_call:
 
 env:
-  GOPRIVATE: go.devnw.com,go.diver.dev,go.atomizer.io,go.secteria.com,go.structs.dev
-  GH_ACCESS_TOKEN: ${{ secrets.GH_PAT }}
+  GOPRIVATE: go.spyder.org
 
 jobs:
   analyze:

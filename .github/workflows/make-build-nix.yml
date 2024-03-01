@@ -13,6 +13,9 @@ jobs:
       fail-fast: true
     runs-on: ubuntu-latest
     steps:
+      - name: Install 1Password CLI
+        uses: 1password/install-cli-action@v1
+
       - uses: de-vri-es/setup-git-credentials@v2
         with:
           credentials: ${{secrets.GIT_CREDENTIALS}}

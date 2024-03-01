@@ -5,7 +5,6 @@ on:
 
 env:
   GOPRIVATE: go.spyder.org
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   build:
@@ -16,6 +15,9 @@ jobs:
       fail-fast: true
     runs-on: ${{ matrix.platform }}
     steps:
+      - name: Install 1Password CLI
+        uses: 1password/install-cli-action@v1
+
       - uses: de-vri-es/setup-git-credentials@v2
         with:
           credentials: ${{secrets.GIT_CREDENTIALS}}

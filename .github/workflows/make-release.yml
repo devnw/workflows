@@ -6,11 +6,6 @@ on:
 env:
   GOPRIVATE: go.spyder.org
 
-permissions:
-  contents: write
-  packages: write
-  issues: write
-
 jobs:
   release:
     name: Make Release

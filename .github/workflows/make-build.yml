@@ -5,6 +5,7 @@ on:
 
 env:
   GOPRIVATE: go.spyder.org
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   build:

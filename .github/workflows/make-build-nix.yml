@@ -48,6 +48,3 @@ jobs:
           name: fuzz-results
           path: testdata/fuzz
 
-      - name: Release
-        run: make release-ci
-

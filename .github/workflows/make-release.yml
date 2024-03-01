@@ -6,6 +6,11 @@ on:
 env:
   GOPRIVATE: go.spyder.org
 
+permissions:
+  contents: write
+  packages: write
+  issues: write
+
 jobs:
   release:
     name: Make Release
@@ -20,6 +25,8 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -31,5 +38,11 @@ jobs:
         with:
           go-version: ${{ vars.GO_VERSION }}
 
-      - name: Release
-        run: make release-ci
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

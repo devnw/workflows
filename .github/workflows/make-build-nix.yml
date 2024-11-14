@@ -3,48 +3,45 @@ name: Build
 on:
   workflow_call:
 
+permissions:
+  contents: write
+  deployments: write
+
 env:
-  GOPRIVATE: go.spyder.org
+  GOPRIVATE: ${{ vars.GOPRIVATE }}
+  GH_ACCESS_TOKEN: ${{ secrets.GH_PAT }}
 
 jobs:
+  lint:
+    name: Lint
+    uses: devnw/workflows/.github/workflows/nix.yml@main
+    with:
+      job: lint
+      command: make lint
+    secrets: inherit # pragma: allowlist secret
+
   build:
-    name: Make Build
-    strategy:
-      fail-fast: true
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install 1Password CLI
-        uses: 1password/install-cli-action@v1
+    name: Execute Build
+    uses: devnw/workflows/.github/workflows/nix.yml@main
+    with:
+      job: build 
+      command: make build-ci
+    secrets: inherit # pragma: allowlist secret
 
-      - uses: de-vri-es/setup-git-credentials@v2
-        with:
-          credentials: ${{secrets.GIT_CREDENTIALS}}
+  test:
+    name: Execute Tests
+    needs: [lint, build]
+    uses: devnw/workflows/.github/workflows/nix.yml@main
+    with:
+      job: test
+      command: make test-ci
+    secrets: inherit # pragma: allowlist secret
 
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '${{ vars.PYTHON_VERSION }}'
-          check-latest: true
-
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: ${{ vars.GO_VERSION }}
-
-      - name: Build
-        run: make build-ci
-
-      - name: Upload Test Coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: coverage
-          path: coverage.txt
-
-      - name: Upload Fuzz Results
-        uses: actions/upload-artifact@v3
-        with:
-          name: fuzz-results
-          path: testdata/fuzz
-
+  benchmark:
+    name: Execute Benchmarks
+    needs: [lint, build, test]
+    uses: devnw/workflows/.github/workflows/nix.yml@main
+    with:
+      job: benchmark
+      command: make bench-ci
+    secrets: inherit # pragma: allowlist secret

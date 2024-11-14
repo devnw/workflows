@@ -1,42 +1,40 @@
-name: Build
+name: Make Build
 
 on:
   workflow_call:
 
 env:
-  GOPRIVATE: go.spyder.org
+  GOPRIVATE: ${{ vars.GOPRIVATE }}
 
 jobs:
   build:
-    name: Make Build
-    strategy:
-      matrix:
-        platform: [ubuntu-latest, macos-latest, windows-latest]
-      fail-fast: true
-    runs-on: ${{ matrix.platform }}
+    name: "Build"
+    runs-on: "ubuntu-latest"
     steps:
-      - name: Install 1Password CLI
-        uses: 1password/install-cli-action@v1
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - uses: de-vri-es/setup-git-credentials@v2
         with:
           credentials: ${{secrets.GIT_CREDENTIALS}}
 
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Install 1Password CLI
+        uses: 1password/install-cli-action@v1
 
-      - uses: actions/setup-python@v5
+      - name: Install Nix
+        uses: cachix/install-nix-action@v18
         with:
-          python-version: '${{ vars.PYTHON_VERSION }}'
-          check-latest: true
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
+      - uses: workflow/nix-shell-action@v3
+        id: plan
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_TOKEN }}
         with:
-          go-version: ${{ vars.GO_VERSION }}
-
-      - name: Build
-        run: make build-ci
+          flakes-from-devshell: true
+          script: |
+            make build
 
       - name: Upload Test Coverage
         uses: actions/upload-artifact@v3
@@ -49,6 +47,3 @@ jobs:
         with:
           name: fuzz-results
           path: testdata/fuzz
-
-      - name: Release
-        run: make release-ci

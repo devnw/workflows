@@ -4,7 +4,7 @@ on:
   workflow_call:
 
 env:
-  GOPRIVATE: go.spyder.org
+  GOPRIVATE: ${{ vars.GOPRIVATE }}
 
 jobs:
   release:
@@ -31,13 +31,26 @@ jobs:
       - name: Benchmark
         run: make bench-ci
 
+      - name: Early Exit on Empty Benchmark
+        id: early-exit
+        run: |
+          if [ ! -e output.txt ] || [ ! -s output.txt ]; then
+            echo ""
+          else
+            cat output.txt
+          fi
+      - name: Debug Benchmark Found
+        run: echo "benchmarks_found is [${{ steps.early-exit.outputs.stdout }}]"
+
       - name: Download previous benchmark data
+        if: ${{ steps.early-exit.outputs.stdout != '' }}
         uses: actions/cache@v3
         with:
           path: ./cache
           key: ${{ runner.os }}-benchmark
 
       - name: Store benchmark result
+        if: ${{ steps.early-exit.outputs.stdout != '' }}
         uses: benchmark-action/github-action-benchmark@v1
         with:
           name: Benchmark Results

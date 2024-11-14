@@ -1,14 +1,24 @@
-name: Build
-
 on:
   workflow_call:
+    inputs:
+      job:
+        required: true
+        type: string
+      command:
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  deployments: write
 
 env:
   GOPRIVATE: ${{ vars.GOPRIVATE }}
+  GH_ACCESS_TOKEN: ${{ secrets.GH_PAT }}
 
 jobs:
-  build:
-    name: "Build"
+  {{ inputs.job }}:
+    name: "{{ inputs.job }}"
     runs-on: "ubuntu-latest"
     steps:
       - name: Checkout
@@ -22,19 +32,22 @@ jobs:
         uses: 1password/install-cli-action@v1
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v18
+        uses: cachix/install-nix-action@v30
         with:
           extra_nix_config: |
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
 
-      - uses: workflow/nix-shell-action@v3
-        id: plan
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_TOKEN }}
+      - uses: actions/cache@v4
         with:
-          flakes-from-devshell: true
-          script: |
-            make build
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: "{{ inputs.job }}"
+        run: nix develop --command {{ inputs.command }}
 
       - name: Upload Test Coverage
         uses: actions/upload-artifact@v3
@@ -47,3 +60,9 @@ jobs:
         with:
           name: fuzz-results
           path: testdata/fuzz
+
+      - name: Upload Test Coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmarks 
+          path: bench-output.txt

@@ -11,12 +11,6 @@ on:
         required: false
         type: boolean
 
-env:
-  GOPRIVATE: ${{ vars.GOPRIVATE }}
-  GH_ACCESS_TOKEN: ${{ secrets.GH_PAT }}
-  OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_TOKEN }}
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
 jobs:
   job:
     name: "${{ inputs.job }}"
@@ -26,6 +20,13 @@ jobs:
       deployments: write
       packages: write
       pages: write
+    
+    env:
+      GOPRIVATE: ${{ vars.GOPRIVATE }}
+      GH_ACCESS_TOKEN: ${{ secrets.GH_PAT }}
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     steps:
       - name: Tailscale
         if: ${{ inputs.tailnet }}

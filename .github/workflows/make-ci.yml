@@ -6,6 +6,8 @@ on:
 permissions:
   contents: write
   deployments: write
+  packages: write
+  pages: write
 
 env:
   GOPRIVATE: ${{ vars.GOPRIVATE }}

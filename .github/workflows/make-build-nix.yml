@@ -45,3 +45,13 @@ jobs:
       job: benchmark
       command: make bench-ci
     secrets: inherit # pragma: allowlist secret
+
+  release:
+    name: Execute Release
+    if: startsWith(github.ref, 'refs/tags/v') 
+    needs: [lint, build, test, benchmark]
+    uses: devnw/workflows/.github/workflows/nix.yml@main
+    with:
+      job: release
+      command: make release-ci
+    secrets: inherit # pragma: allowlist secret

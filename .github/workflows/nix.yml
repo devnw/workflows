@@ -18,7 +18,7 @@ env:
 
 jobs:
   job:
-    name: "{{ inputs.job }}"
+    name: "${{ inputs.job }}"
     runs-on: "ubuntu-latest"
     steps:
       - name: Checkout
@@ -46,8 +46,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: "{{ inputs.job }}"
-        run: nix develop --command {{ inputs.command }}
+      - name: "${{ inputs.job }}"
+        run: nix develop --command ${{ inputs.command }}
 
       - name: Upload Test Coverage
         uses: actions/upload-artifact@v3

@@ -14,6 +14,8 @@ on:
 permissions:
   contents: write
   deployments: write
+  packages: write
+  pages: write
 
 env:
   GOPRIVATE: ${{ vars.GOPRIVATE }}
@@ -62,6 +64,10 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: "${{ inputs.job }}"
+        env:
+          GOPRIVATE: ${{ env.GOPRIVATE }}
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ env.OP_SERVICE_ACCOUNT_TOKEN }}
+          GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
         run: nix develop --command ${{ inputs.command }}
 
       - name: Upload Test Coverage

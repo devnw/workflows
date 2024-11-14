@@ -38,6 +38,8 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: de-vri-es/setup-git-credentials@v2
         with:

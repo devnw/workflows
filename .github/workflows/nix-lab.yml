@@ -1,0 +1,84 @@
+on:
+  workflow_call:
+    inputs:
+      job:
+        required: true
+        type: string
+      command:
+        required: true
+        type: string
+      tailnet:
+        required: false
+        type: boolean
+
+jobs:
+  job:
+    name: "${{ inputs.job }}"
+    runs-on: nixos
+    permissions:
+      contents: write
+      deployments: write
+      packages: write
+      pages: write
+    
+    env:
+      GOPRIVATE: ${{ vars.GOPRIVATE }}
+      GH_ACCESS_TOKEN: ${{ secrets.GH_PAT }}
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Tailscale
+        if: ${{ inputs.tailnet }}
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: de-vri-es/setup-git-credentials@v2
+        with:
+          credentials: ${{secrets.GIT_CREDENTIALS}}
+
+      - name: Install 1Password CLI
+        uses: 1password/install-cli-action@v1
+        with:
+          version: latest-beta
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: "${{ inputs.job }}"
+        run: nix develop --command ${{ inputs.command }}
+
+      - name: Upload Test Coverage
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: ignore
+          name: coverage
+          path: coverage.txt
+
+      - name: Upload Fuzz Results
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: ignore
+          name: fuzz-results
+          path: testdata/fuzz
+
+      - name: Upload Test Coverage
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: ignore
+          name: benchmarks 
+          path: bench-output.txt

@@ -45,11 +45,6 @@ jobs:
         with:
           credentials: ${{secrets.GIT_CREDENTIALS}}
 
-      - name: Install 1Password CLI
-        uses: 1password/install-cli-action@v1
-        with:
-          version: latest-beta
-
       - uses: actions/cache@v4
         with:
           path: |

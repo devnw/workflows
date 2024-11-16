@@ -28,14 +28,6 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
-      - name: Tailscale
-        if: ${{ inputs.tailnet }}
-        uses: tailscale/github-action@v2
-        with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: tag:ci
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -45,19 +37,10 @@ jobs:
         with:
           credentials: ${{secrets.GIT_CREDENTIALS}}
 
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
       - name: "${{ inputs.job }}"
         run: nix develop --command ${{ inputs.command }}
 
-      - name: Upload Test Coverage
+      - name: Upload Outputs
         uses: actions/upload-artifact@v4
         with:
           if-no-files-found: ignore
@@ -70,10 +53,3 @@ jobs:
           if-no-files-found: ignore
           name: fuzz-results
           path: testdata/fuzz
-
-      - name: Upload Test Coverage
-        uses: actions/upload-artifact@v4
-        with:
-          if-no-files-found: ignore
-          name: benchmarks 
-          path: bench-output.txt

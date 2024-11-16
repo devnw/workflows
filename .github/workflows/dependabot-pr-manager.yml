@@ -1,0 +1,26 @@
+on:
+  schedule:
+    - hourly
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+jobs:
+  job:
+    name: "Reconcile Dependabot PRs"
+    runs-on: nixos
+    permissions:
+      contents: write
+    
+    env:
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "Reconcile Dependabot PRs"
+        run: nix develop --command make dependabot

@@ -7,10 +7,6 @@ on:
       command:
         required: true
         type: string
-      tailnet:
-        required: false
-        type: boolean
-
 jobs:
   job:
     name: "${{ inputs.job }}"

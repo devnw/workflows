@@ -5,6 +5,7 @@ on:
 
 env:
   GOPRIVATE: ${{ vars.GOPRIVATE }}
+  GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
 
 jobs:
   build:

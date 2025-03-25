@@ -2,6 +2,11 @@ name: Release
 
 on:
   workflow_call:
+    secrets:
+      GIT_CREDENTIALS:
+        required: true
+      GORELEASER_KEY:
+        required: false 
 
 env:
   GOPRIVATE: ${{ vars.GOPRIVATE }}

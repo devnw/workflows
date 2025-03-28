@@ -33,11 +33,12 @@ jobs:
       job: build
       command: make bench-ci
     secrets: # pragma: allowlist secret
-      GH_ACCESS_TOKEN: ${{ secrets.GH_PAT }}
-      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_TOKEN }}
+      GH_PAT: ${{ secrets.GH_PAT }}
+      OP_TOKEN: ${{ secrets.OP_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
       GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
+
   release:
     name: Lint, Build, Test, Benchmark and Release
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
@@ -46,8 +47,8 @@ jobs:
       job: release
       command: make release-ci
     secrets: # pragma: allowlist secret
-      GH_ACCESS_TOKEN: ${{ secrets.GH_PAT }}
-      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_TOKEN }}
+      GH_PAT: ${{ secrets.GH_PAT }}
+      OP_TOKEN: ${{ secrets.OP_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
       GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}

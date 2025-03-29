@@ -5,24 +5,23 @@ on:
     secrets:
       GIT_CREDENTIALS:
         required: true
-      OP_TOKEN:
+      OP_SERVICE_ACCOUNT_TOKEN:
         required: false 
       GH_ACCESS_TOKEN:
         required: true 
+      GORELEASER_KEY:
+        required: false
+      TS_OAUTH_CLIENT_ID:
+        required: false
+      TS_OAUTH_SECRET:
+        required: false
+
 
 permissions:
   contents: write
   deployments: write
   packages: write
   pages: write
-
-env:
-  GOPRIVATE: ${{ vars.GOPRIVATE }}
-  GH_ACCESS_TOKEN: ${{ secrets.GH_PAT }}
-  OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_TOKEN }}
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
-  GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
 
 jobs:
   build:
@@ -32,12 +31,7 @@ jobs:
     with:
       job: build
       command: make bench-ci
-    secrets: # pragma: allowlist secret
-      GH_PAT: ${{ secrets.GH_PAT }}
-      OP_TOKEN: ${{ secrets.OP_TOKEN }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
-      GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
+    secrets: inherit # pragma: allowlist secret
 
   release:
     name: Lint, Build, Test, Benchmark and Release
@@ -46,9 +40,4 @@ jobs:
     with:
       job: release
       command: make release-ci
-    secrets: # pragma: allowlist secret
-      GH_PAT: ${{ secrets.GH_PAT }}
-      OP_TOKEN: ${{ secrets.OP_TOKEN }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
-      GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
+    secrets: inherit # pragma: allowlist secret

@@ -7,6 +7,10 @@ on:
       command:
         required: true
         type: string
+      flake:
+        required: true
+        type: string
+        default: "."
 jobs:
   job:
     name: "${{ inputs.job }}"
@@ -35,7 +39,9 @@ jobs:
           credentials: ${{secrets.GIT_CREDENTIALS}}
 
       - name: "${{ inputs.job }}"
-        run: nix develop --command ${{ inputs.command }}
+        run: |
+          nix develop ${{ inputs.flake }} \
+            --refresh --command ${{ inputs.command }} 
 
       - name: Upload Outputs
         uses: actions/upload-artifact@v4

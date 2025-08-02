@@ -2,6 +2,18 @@
 
 set -euo pipefail
 
+# Update the git submodules.
+if [ -x "$(command -v git)" ]; then
+    if [ -d ".git" ]; then
+        echo "Updating git submodules..."
+        git submodule update --init --recursive
+    else
+        echo "No git repository found, skipping submodule update"
+    fi
+else
+    echo "git is not installed, skipping submodule update"
+fi  
+
 # Check if the `.pre-commit-config.yaml` file exists and run `pre-commit autoupdate`.
 if [ -x "$(command -v pre-commit)" ]; then
     if [ -f ".pre-commit-config.yaml" ]; then

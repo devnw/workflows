@@ -30,7 +30,8 @@ if [ -x "$(command -v nix)" ]; then
     # Check if there is a flake.nix file
     if [ -f "flake.nix" ]; then
         echo "Found flake.nix, running nix flake update..."
-        NIX_CONFIG="experimental-features = nix-command flakes;access-tokens = github.com=$(gh auth token)" nix flake update
+        NIX_CONFIG="experimental-features = nix-command flakes
+        access-tokens = github.com=$(gh auth token)" nix flake update
     else
         echo "flake.nix not found, skipping nix flake update"
     fi

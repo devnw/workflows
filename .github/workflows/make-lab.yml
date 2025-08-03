@@ -20,7 +20,7 @@ jobs:
   build:
     name: Lint, Build, Test, Benchmark
     if: ${{ ! startsWith(github.ref, 'refs/tags/v') }}
-    uses: devnw/workflows/.github/workflows/nix-lab.yml@main
+    uses: spyderorg/workflows/.github/workflows/nix-lab.yml@main
     with:
       job: build
       command: make bench-ci
@@ -28,7 +28,7 @@ jobs:
   release:
     name: Lint, Build, Test, Benchmark and Release
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
-    uses: devnw/workflows/.github/workflows/nix-lab.yml@main
+    uses: spyderorg/workflows/.github/workflows/nix-lab.yml@main
     with:
       job: release
       command: make release-ci

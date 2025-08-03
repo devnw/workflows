@@ -9,7 +9,7 @@ env:
 jobs:
   release:
     name: Make Benchmark
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: de-vri-es/setup-git-credentials@v2
         with:
@@ -17,6 +17,9 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - uses: DeterminateSystems/flake-checker-action@main
 
       - uses: actions/setup-python@v5
         with:

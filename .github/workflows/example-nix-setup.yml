@@ -1,0 +1,50 @@
+# Example workflow showing how to use the nix-setup composite action
+
+name: Example with Nix Setup
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      # Method 1: Use the composite action directly in your job
+      - name: Setup Nix Environment
+        uses: ./.github/actions/nix-setup
+        with:
+          depth: 0
+          cache-name: oss-devnw
+          upstream-cache: https://oss-devnw.cachix.org
+          nix-args: '--impure --accept-flake-config'
+          tailnet: false
+          git-credentials: ${{ secrets.GIT_CREDENTIALS }}
+          op-service-account-token: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          gh-access-token: ${{ secrets.GH_ACCESS_TOKEN }}
+          goreleaser-key: ${{ secrets.GORELEASER_KEY }}
+          ts-oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          ts-oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          fontawesome-token: ${{ secrets.FONTAWESOME_TOKEN }}
+          docs-location: ${{ secrets.DOCS_LOCATION }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      # Your build steps here
+      - name: Build
+        run: make build
+
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      # Method 2: Minimal usage with defaults
+      - name: Setup Nix Environment
+        uses: ./.github/actions/nix-setup
+        with:
+          git-credentials: ${{ secrets.GIT_CREDENTIALS }}
+          gh-access-token: ${{ secrets.GH_ACCESS_TOKEN }}
+          docs-location: ${{ secrets.DOCS_LOCATION }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      # Your test steps here
+      - name: Test
+        run: make test

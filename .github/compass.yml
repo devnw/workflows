@@ -1,0 +1,26 @@
+name: DEVNW - workflows
+id: 'ari:cloud:compass:89436501-45fd-498f-9c7c-b0db10b968cb:component/d819e7ce-7ec1-48ae-b718-cb3459fc6e06/e9099e4e-6211-44be-93b7-505e55d5d583'
+slug: devnw-workflows
+description: null
+configVersion: 1
+typeId: LIBRARY
+ownerId: 'ari:cloud:identity::team/ed895264-a5df-48d6-9aa2-f44fe1686317'
+fields:
+  tier: 1
+  lifecycle: Active
+  isMonorepoProject: false
+links:
+  - name: null
+    type: REPOSITORY
+    url: 'https://github.com/devnw/workflows'
+  - name: ''
+    type: PROJECT
+    url: 'https://devnw.atlassian.net/browse/DEV'
+relationships: {}
+labels:
+  - 'language:shell'
+  - 'source:github'
+customFields: null
+
+# Learn more about formatting compass.yml:
+# https://go.atlassian.com/compass-yml-format

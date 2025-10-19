@@ -5,32 +5,40 @@ on:
     secrets:
       GIT_CREDENTIALS:
         required: true
+      OP_SERVICE_ACCOUNT_TOKEN:
+        required: false 
+      GH_ACCESS_TOKEN:
+        required: true 
       GORELEASER_KEY:
+        required: false
+      TS_OAUTH_CLIENT_ID:
+        required: false
+      TS_OAUTH_SECRET:
+        required: false
+      GOPRIVATE:
+        required: false
+      FONTAWESOME_TOKEN:
         required: false
 
 env:
   GOPRIVATE: ${{ vars.GOPRIVATE }}
+  GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+  OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+  GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
+  FONTAWESOME_TOKEN: ${{ secrets.FONTAWESOME_TOKEN }}
 
 jobs:
   release:
     name: Make Release
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
-      - name: Install 1Password CLI
-        uses: 1password/install-cli-action@v1
-
-      - uses: de-vri-es/setup-git-credentials@v2
+      - uses: devnw/workflows/.github/actions/nix-setup@main
         with:
-          credentials: ${{secrets.GIT_CREDENTIALS}}
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-      - uses: DeterminateSystems/flake-checker-action@main
+          git-credentials: ${{ secrets.GIT_CREDENTIALS }}
+          gh-access-token: ${{ secrets.GH_ACCESS_TOKEN }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       - uses: actions/setup-python@v5
         with:
@@ -38,12 +46,12 @@ jobs:
           check-latest: true
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ vars.GO_VERSION }}
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser-pro
           version: latest

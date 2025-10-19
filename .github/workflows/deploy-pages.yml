@@ -1,0 +1,184 @@
+name: 'Package Docs, Benchmarks, Coverage & Metrics to GitHub Pages'
+
+on:
+  workflow_call:
+    secrets:
+      GIT_CREDENTIALS:
+        required: true
+      OP_SERVICE_ACCOUNT_TOKEN:
+        required: false
+      GH_ACCESS_TOKEN:
+        required: true
+      GORELEASER_KEY:
+        required: false
+      TS_OAUTH_CLIENT_ID:
+        required: false
+      TS_OAUTH_SECRET:
+        required: false
+      GOPRIVATE:
+        required: false
+      FONTAWESOME_TOKEN:
+        required: false
+      CACHIX_AUTH_TOKEN:
+        required: true
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: devnw/workflows/.github/actions/nix-setup@main
+        with:
+          git-credentials: ${{ secrets.GIT_CREDENTIALS }}
+          gh-access-token: ${{ secrets.GH_ACCESS_TOKEN }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+
+      # -----------------------------
+      # Language / framework setup
+      # Each block is conditional so the workflow can be reused across
+      # repositories (Go, Python, JS/TS React, Zig, Nix, etc.).
+      # -----------------------------
+
+      - name: Setup Go (if go.mod present)
+        if: ${{ hashFiles('go.mod') != '' }}
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Setup Python (if pyproject.toml or requirements*.txt present)
+        if: ${{ hashFiles('pyproject.toml') != '' || hashFiles('requirements.txt') != '' || hashFiles('requirements-dev.txt') != '' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        if: ${{ hashFiles('pyproject.toml') != '' || hashFiles('requirements.txt') != '' || hashFiles('requirements-dev.txt') != '' }}
+        run: |
+          set -euxo pipefail
+          if [ -f pyproject.toml ]; then
+            # Prefer uv if present for speed, else pip
+            if command -v uv >/dev/null 2>&1; then
+              uv pip install -e .
+            else
+              python -m pip install --upgrade pip
+              # Editable install if a project (PEP 621) else just deps
+              if grep -q "\[project\]" pyproject.toml; then
+                python -m pip install -e .
+              fi
+              if [ -f requirements.txt ]; then
+                python -m pip install -r requirements.txt
+              fi
+              if [ -f requirements-dev.txt ]; then
+                python -m pip install -r requirements-dev.txt
+              fi
+            fi
+          else
+            python -m pip install --upgrade pip
+            for f in requirements.txt requirements-dev.txt; do
+              [ -f "$f" ] && python -m pip install -r "$f"
+            done
+          fi
+
+      - name: Setup Node.js (if package.json present)
+        if: ${{ hashFiles('package.json') != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: ${{ (hashFiles('pnpm-lock.yaml') != '' && 'pnpm') || (hashFiles('yarn.lock') != '' && 'yarn') || (hashFiles('package-lock.json') != '' && 'npm') || '' }}
+
+      - name: Install JS/TS dependencies
+        if: ${{ hashFiles('package.json') != '' }}
+        run: |
+          set -euxo pipefail
+          if [ -f pnpm-lock.yaml ]; then
+            corepack enable || true
+            pnpm install --frozen-lockfile
+          elif [ -f yarn.lock ]; then
+            corepack enable || true
+            yarn install --frozen-lockfile
+          elif [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Build frontend (if build script present)
+        if: ${{ hashFiles('package.json') != '' }}
+        run: |
+          set -euxo pipefail
+            # Only run if a build script exists to avoid failure.
+          if jq -e '.scripts.build' package.json >/dev/null 2>&1; then
+            if [ -f pnpm-lock.yaml ]; then pnpm run build; \
+            elif [ -f yarn.lock ]; then yarn build; \
+            else npm run build; fi
+          else
+            echo "No build script detected in package.json; skipping frontend build." >&2
+          fi
+        shell: bash
+
+      - name: Setup Zig (if build.zig present)
+        if: ${{ hashFiles('build.zig') != '' }}
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.13.0
+
+      - name: Build Zig project
+        if: ${{ hashFiles('build.zig') != '' }}
+        run: |
+          set -euxo pipefail
+          zig build
+
+      - name: Summarize detected environment
+        run: |
+          echo "Detected components:" > summary.txt
+          [ -f go.mod ] && echo "- Go" >> summary.txt
+          [ -f pyproject.toml ] && echo "- Python (pyproject.toml)" >> summary.txt || [ -f requirements.txt ] && echo "- Python (requirements.txt)" >> summary.txt
+          [ -f package.json ] && echo "- Node.js / JS/TS" >> summary.txt
+          [ -f build.zig ] && echo "- Zig" >> summary.txt
+          [ -f flake.nix ] && echo "- Nix" >> summary.txt
+          cat summary.txt
+
+      - name: Upload environment summary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: environment-summary
+          path: summary.txt
+
+      - name: Use doc-pages composite action
+        uses: codeprosorg/doc-pages@main
+        id: docs
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Enable benchmarks only when Go OR a bench script exists; keeps non-Go projects from failing.
+          run_benchmarks: ${{ hashFiles('go.mod') != '' || hashFiles('scripts/bench.sh') != '' }}
+          bench_branch: bench-data
+          site_name: '${{ github.repository }} — Documentation Site'
+          extra_nav_docs: true
+          nav_order: home,reference,coverage,metrics,security,bench,docs
+          embed_coverage_html: true
+          enable_nix: ${{ hashFiles('flake.nix') != '' }}
+          git_credentials: ${{ secrets.GIT_CREDENTIALS }}
+          cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Upload doc-pages artifacts
+        uses: actions/upload-pages-artifact@v3
+        with:
+          name: github-pages
+          path: ${{ steps.docs.outputs.site_dir }}
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

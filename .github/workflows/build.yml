@@ -2,46 +2,76 @@ name: Build
 
 on:
   workflow_call:
+    secrets:
+      GIT_CREDENTIALS:
+        required: true
+      OP_SERVICE_ACCOUNT_TOKEN:
+        required: false
+      GH_ACCESS_TOKEN:
+        required: true
+      GORELEASER_KEY:
+        required: false
+      TS_OAUTH_CLIENT_ID:
+        required: false
+      TS_OAUTH_SECRET:
+        required: false
+      GOPRIVATE:
+        required: false
+      FONTAWESOME_TOKEN:
+        required: false
+      CACHIX_AUTH_TOKEN:
+        required: true
+      DOCS_LOCATION:
+        required: true
+      CODECOV_TOKEN:
+        required: false
+      COMPASS_API_KEY:
+        required: false
+      COMPASS_USER:
+        required: false
+      COMPASS_USER_EMAIL:
+        required: false
+      REPO_RW_PAT:
+        required: false
 
 env:
   GOPRIVATE: ${{ vars.GOPRIVATE }}
+  GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+  OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+  GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
+  FONTAWESOME_TOKEN: ${{ secrets.FONTAWESOME_TOKEN }}
+  CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+  DOCS_LOCATION: ${{ secrets.DOCS_LOCATION }}
+  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+  COMPASS_API_KEY: ${{ secrets.COMPASS_API_KEY }}
+  COMPASS_USER: ${{ secrets.COMPASS_USER }}
+  COMPASS_USER_EMAIL: ${{ secrets.COMPASS_USER_EMAIL }}
+  REPO_RW_PAT: ${{ secrets.REPO_RW_PAT }}
 
 jobs:
   build:
     name: 'Build'
-    runs-on: 'ubuntu-24.04'
+    runs-on: 'ubuntu-latest'
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-      - uses: DeterminateSystems/flake-checker-action@main
-
-      - uses: de-vri-es/setup-git-credentials@v2
+      - uses: devnw/workflows/.github/actions/nix-setup@main
         with:
-          credentials: ${{secrets.GIT_CREDENTIALS}}
+          git-credentials: ${{ secrets.GIT_CREDENTIALS }}
+          gh-access-token: ${{ secrets.GH_ACCESS_TOKEN }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
-      - name: Install 1Password CLI
-        uses: 1password/install-cli-action@v1
-
-      - uses: workflow/nix-shell-action@v3
-        id: plan
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_TOKEN }}
-        with:
-          flakes-from-devshell: true
-          script: |
-            make build
+      - name: 'Build'
+        run: nix develop --accept-flake-config --command make build
 
       - name: Upload Test Coverage
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage
           path: coverage.txt
 
       - name: Upload Fuzz Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: fuzz-results
           path: testdata/fuzz

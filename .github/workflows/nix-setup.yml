@@ -1,15 +1,26 @@
 on:
   workflow_call:
     inputs:
-      job:
-        required: true
+      depth:
+        required: false
+        type: number
+        default: 0
+      cache-name:
+        required: false
         type: string
-      command:
-        required: true
+        default: oss-devnw
+      upstream-cache:
+        required: false
         type: string
+        default: https://oss-devnw.cachix.org
+      nix-args:
+        required: false
+        type: string
+        default: '--impure --accept-flake-config'
       tailnet:
         required: false
         type: boolean
+        default: false
     secrets:
       GIT_CREDENTIALS:
         required: true
@@ -42,7 +53,6 @@ on:
 
 jobs:
   job:
-    name: '${{ inputs.job }}'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -51,65 +61,38 @@ jobs:
       pages: write
 
     env:
-      GOPRIVATE: ${{ vars.GOPRIVATE }}
       GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
       OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
       GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
-      FONTAWESOME_TOKEN: ${{ secrets.FONTAWESOME_TOKEN }}
-      DOCS_LOCATION: ${{ secrets.DOCS_LOCATION }}
       CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      DOCS_LOCATION: ${{ secrets.DOCS_LOCATION }}
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       COMPASS_API_KEY: ${{ secrets.COMPASS_API_KEY }}
       COMPASS_USER: ${{ secrets.COMPASS_USER }}
       COMPASS_USER_EMAIL: ${{ secrets.COMPASS_USER_EMAIL }}
       REPO_RW_PAT: ${{ secrets.REPO_RW_PAT }}
+      FONTAWESOME_TOKEN: ${{ secrets.FONTAWESOME_TOKEN }}
+      GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+      TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+      TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
 
     steps:
-      - uses: devnw/workflows/.github/actions/nix-setup@main
+      # Use the composite action
+      - name: Setup Nix Environment
+        uses: ./.github/actions/nix-setup
         with:
+          depth: ${{ inputs.depth }}
+          cache-name: ${{ inputs.cache-name }}
+          upstream-cache: ${{ inputs.upstream-cache }}
+          nix-args: ${{ inputs.nix-args }}
+          tailnet: ${{ inputs.tailnet }}
           git-credentials: ${{ secrets.GIT_CREDENTIALS }}
+          op-service-account-token: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
           gh-access-token: ${{ secrets.GH_ACCESS_TOKEN }}
+          goreleaser-key: ${{ secrets.GORELEASER_KEY }}
+          ts-oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          ts-oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          fontawesome-token: ${{ secrets.FONTAWESOME_TOKEN }}
+          docs-location: ${{ secrets.DOCS_LOCATION }}
           cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
-
-      - name: Tailscale
-        if: ${{ inputs.tailnet }}
-        uses: tailscale/github-action@v3
-        with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: tag:ci
-
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
-      - name: Run Command
-        run: nix develop --accept-flake-config --command ${{ inputs.command }}
-
-      - name: Upload Test Coverage
-        uses: actions/upload-artifact@v4
-        with:
-          if-no-files-found: ignore
-          name: coverage
-          path: coverage.txt
-
-      - name: Upload Fuzz Results
-        uses: actions/upload-artifact@v4
-        with:
-          if-no-files-found: ignore
-          name: fuzz-results
-          path: testdata/fuzz
-
-      - name: Upload Test Coverage
-        uses: actions/upload-artifact@v4
-        with:
-          if-no-files-found: ignore
-          name: benchmarks
-          path: bench-output.txt

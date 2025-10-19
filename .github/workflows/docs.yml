@@ -1,0 +1,88 @@
+name: Write Package Docs to File
+
+on:
+  workflow_call:
+    secrets:
+      GIT_CREDENTIALS:
+        required: true
+      OP_SERVICE_ACCOUNT_TOKEN:
+        required: false 
+      GH_ACCESS_TOKEN:
+        required: true 
+      GORELEASER_KEY:
+        required: false
+      TS_OAUTH_CLIENT_ID:
+        required: false
+      TS_OAUTH_SECRET:
+        required: false
+      GOPRIVATE:
+        required: false
+      FONTAWESOME_TOKEN:
+        required: false
+      DOCS_LOCATION:
+        required: true 
+
+env:
+  GOPRIVATE: ${{ vars.GOPRIVATE }}
+  GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+  OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+  GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
+  FONTAWESOME_TOKEN: ${{ secrets.FONTAWESOME_TOKEN }}
+  DOCS_LOCATION: ${{ secrets.DOCS_LOCATION }}
+
+permissions:
+  contents: write
+  deployments: write
+  packages: write
+  pages: write
+
+jobs:
+  update-docs:
+    name: "${{ inputs.job }}"
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: devnw/workflows/.github/actions/nix-setup@main
+        with:
+          git-credentials: ${{ secrets.GIT_CREDENTIALS }}
+          gh-access-token: ${{ secrets.GH_ACCESS_TOKEN }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Generate Go documentation and update README
+        run: |
+          go run github.com/robertkrimen/godocdown/godocdown@latest . > ${{ secrets.DOCS_LOCATION }}/package.md
+
+      - name: Create or update pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GH_ACCESS_TOKEN }}
+          commit-message: "docs(${{ secrets.DOCS_LOCATION }}/package.md): update package documentation"
+          title: "Update Go Documentation"
+          body: "This PR updates the Go package documentation in the specified location."
+          branch: "update-go-documentation"
+          sign-commits: true
+          base: "main"
+          labels: "documentation,automerge"
+      - name: Enable Pull Request Automerge
+        if: steps.cpr.outputs.pull-request-operation == 'created'
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.GH_ACCESS_TOKEN }}
+          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+          merge-method: squash
+      - name: Auto approve
+        if: steps.cpr.outputs.pull-request-operation == 'created'
+        run: gh pr review --approve "${{ steps.cpr.outputs.pull-request-number }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

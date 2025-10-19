@@ -1,0 +1,61 @@
+name: Vulnerability Count to Compass
+
+on:
+  # This workflow is meant to be called by other workflows
+  workflow_call:
+    secrets:
+      COMPASS_USER:             { required: true }
+      COMPASS_EMAIL:            { required: true }
+      COMPASS_API_KEY:          { required: true }
+      VULNERABILITY_SOURCE_ID:  { required: true }
+      GH_ACCESS_TOKEN:          { required: true }
+
+env:
+  COMPASS_USER:      ${{ secrets.COMPASS_USER }}
+  COMPASS_EMAIL:     ${{ secrets.COMPASS_EMAIL }}
+  COMPASS_API_KEY:   ${{ secrets.COMPASS_API_KEY }}
+  VULNERABILITY_SOURCE_ID: ${{ secrets.VULNERABILITY_SOURCE_ID }}
+  GH_TOKEN:          ${{ secrets.GH_ACCESS_TOKEN }}
+
+jobs:
+  build:
+    name: Push security‑advisory count to Compass
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ──────────────────────────────────────────────────────────────
+      # 1. Count published security advisories in the current repo
+      # ──────────────────────────────────────────────────────────────
+      - name: Collect advisory metric
+        id: secadvs
+        run: |
+          repo="${{ github.repository }}"
+          count=$(curl -sSL \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/$repo/security-advisories?state=published" \
+            | jq 'length')
+          echo "value=$count" >> "$GITHUB_OUTPUT"
+
+      # ──────────────────────────────────────────────────────────────
+      # 2. Push that value to Compass
+      #    – If your Compass site is NOT <your-site>.atlassian.net,
+      #      change the hostname accordingly.
+      # ──────────────────────────────────────────────────────────────
+      - name: Upload Vulnerability Count to Compass
+        env:
+          METRIC_VALUE: ${{ steps.secadvs.outputs.value }}
+        run: |
+          curl --request POST \
+          --url https://$COMPASS_USER.atlassian.net/gateway/api/compass/v1/metrics \
+          --user "$USER_EMAIL:$USER_API_KEY" \
+          --header "Accept: application/json" \
+          --header "Content-Type: application/json" \
+          --data "{
+            \"metricSourceId\": \"$VULNERABILITY_SOURCE_ID\",
+            \"value\": $METRIC_VALUE,
+            \"timestamp\": \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\"
+          }"

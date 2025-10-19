@@ -2,63 +2,75 @@ name: Benchmark
 
 on:
   workflow_call:
+    secrets:
+      GIT_CREDENTIALS:
+        required: true
+      OP_SERVICE_ACCOUNT_TOKEN:
+        required: false 
+      GH_ACCESS_TOKEN:
+        required: true 
+      GORELEASER_KEY:
+        required: false
+      TS_OAUTH_CLIENT_ID:
+        required: false
+      TS_OAUTH_SECRET:
+        required: false
+      GOPRIVATE:
+        required: false
+      FONTAWESOME_TOKEN:
+        required: false
+
+permissions:
+  contents: write
 
 env:
   GOPRIVATE: ${{ vars.GOPRIVATE }}
+  GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+  OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+  GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
+  FONTAWESOME_TOKEN: ${{ secrets.FONTAWESOME_TOKEN }}
 
 jobs:
   release:
     name: Make Benchmark
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
-      - uses: de-vri-es/setup-git-credentials@v2
+      - uses: devnw/workflows/.github/actions/nix-setup@main
         with:
-          credentials: ${{secrets.GIT_CREDENTIALS}}
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-      - uses: DeterminateSystems/flake-checker-action@main
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '${{ vars.PYTHON_VERSION }}'
-          check-latest: true
-
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: ${{ vars.GO_VERSION }}
+          git-credentials: ${{ secrets.GIT_CREDENTIALS }}
+          gh-access-token: ${{ secrets.GH_ACCESS_TOKEN }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       - name: Benchmark
         run: make bench-ci
 
-      - name: Early Exit on Empty Benchmark
-        id: early-exit
+      - name: Detect benchmark output
+        if: ${{ always() }}
+        id: check-bench
         run: |
-          if [ ! -e output.txt ] || [ ! -s output.txt ]; then
-            echo ""
+          if [[ -s bench-output.txt ]]; then
+            echo "has_bench=true" >> "$GITHUB_OUTPUT"
+            echo "file=bench-output.txt" >> "$GITHUB_OUTPUT"
+          elif [[ -s output.txt ]]; then
+            echo "has_bench=true" >> "$GITHUB_OUTPUT"
+            echo "file=output.txt" >> "$GITHUB_OUTPUT"
           else
-            cat output.txt
+            echo "has_bench=false" >> "$GITHUB_OUTPUT"
           fi
-      - name: Debug Benchmark Found
-        run: echo "benchmarks_found is [${{ steps.early-exit.outputs.stdout }}]"
 
-      - name: Download previous benchmark data
-        if: ${{ steps.early-exit.outputs.stdout != '' }}
-        uses: actions/cache@v3
-        with:
-          path: ./cache
-          key: ${{ runner.os }}-benchmark
+      - name: Debug benchmark detection
+        if: ${{ always() }}
+        run: echo "has_bench=${{ steps.check-bench.outputs.has_bench }} file=${{ steps.check-bench.outputs.file }}"
 
       - name: Store benchmark result
-        if: ${{ steps.early-exit.outputs.stdout != '' }}
+        if: ${{ always() && steps.check-bench.outputs.has_bench == 'true' }}
         uses: benchmark-action/github-action-benchmark@v1
         with:
           name: Benchmark Results
           tool: 'go'
-          output-file-path: output.txt
+          output-file-path: ${{ steps.check-bench.outputs.file }}
           benchmark-data-dir-path: dev/bench
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true

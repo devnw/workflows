@@ -4,44 +4,86 @@ on:
       job:
         required: true
         type: string
-      command:
-        required: true
-        type: string
       flake:
         required: true
         type: string
-        default: "."
+        default: '.'
+      command:
+        required: true
+        type: string
+    secrets:
+      GIT_CREDENTIALS:
+        required: true
+      OP_SERVICE_ACCOUNT_TOKEN:
+        required: false
+      GH_ACCESS_TOKEN:
+        required: true
+      GORELEASER_KEY:
+        required: false
+      TS_OAUTH_CLIENT_ID:
+        required: false
+      TS_OAUTH_SECRET:
+        required: false
+      DIGITALOCEAN_ACCESS_TOKEN:
+        required: false
+      AWS_ACCESS_KEY_ID:
+        required: false
+      AWS_SECRET_ACCESS_KEY:
+        required: false
+      FONTAWESOME_TOKEN:
+        required: false
+      DOCS_LOCATION:
+        required: true
+      CACHIX_AUTH_TOKEN:
+        required: true
 jobs:
   job:
-    name: "${{ inputs.job }}"
+    name: '${{ inputs.job }}'
     runs-on: nixos
     permissions:
       contents: write
       deployments: write
       packages: write
       pages: write
-    
+
     env:
       GOPRIVATE: ${{ vars.GOPRIVATE }}
-      GH_ACCESS_TOKEN: ${{ secrets.GH_PAT }}
-      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_TOKEN }}
+      GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+      GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
+      DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      FONTAWESOME_TOKEN: ${{ secrets.FONTAWESOME_TOKEN }}
+      DOCS_LOCATION: ${{ secrets.DOCS_LOCATION }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+        with:
+          upstream-cache: https://oss-devnw.cachix.org
+      - uses: DeterminateSystems/flake-checker-action@main
+
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v16
+        with:
+          name: oss-devnw
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
       - uses: de-vri-es/setup-git-credentials@v2
         with:
           credentials: ${{secrets.GIT_CREDENTIALS}}
 
-      - name: "${{ inputs.job }}"
+      - name: '${{ inputs.job }}'
         run: |
           nix develop ${{ inputs.flake }} \
-            --refresh --command ${{ inputs.command }} 
+             --accept-flake-config --refresh --command ${{ inputs.command }}
 
       - name: Upload Outputs
         uses: actions/upload-artifact@v4

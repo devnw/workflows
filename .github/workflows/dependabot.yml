@@ -1,0 +1,24 @@
+name: Auto-Merge Dependabot
+on:
+  workflow_call:
+    secrets:
+      GH_ACCESS_TOKEN:
+        required: true 
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  automerge:
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - name: Enable Pull Request Automerge
+        run: gh pr merge --merge --auto "1"
+        env:
+          GH_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+      - name: Auto approve
+        run: gh pr review --approve "1"
+        env:
+          GH_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}

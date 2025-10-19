@@ -1,0 +1,134 @@
+name: 'Nix Setup'
+description: 'Setup Nix environment with caching and dependencies'
+inputs:
+  depth:
+    description: 'Number of commits to fetch. 0 indicates all history for all branches and tags'
+    required: false
+    default: '0'
+  cache-name:
+    description: 'Cachix cache name'
+    required: false
+    default: 'oss-devnw'
+  upstream-cache:
+    description: 'Upstream cache URL'
+    required: false
+    default: 'https://oss-devnw.cachix.org'
+  nix-args:
+    description: 'Additional arguments for nix develop'
+    required: false
+    default: '--impure --accept-flake-config'
+  tailnet:
+    description: 'Enable Tailscale'
+    required: false
+    default: 'false'
+  git-credentials:
+    description: 'Git credentials for private repositories'
+    required: true
+  op-service-account-token:
+    description: '1Password service account token'
+    required: false
+  gh-access-token:
+    description: 'GitHub access token'
+    required: true
+  goreleaser-key:
+    description: 'GoReleaser key'
+    required: false
+  ts-oauth-client-id:
+    description: 'Tailscale OAuth client ID'
+    required: false
+  ts-oauth-secret:
+    description: 'Tailscale OAuth secret'
+    required: false
+  cachix-auth-token:
+    description: 'Cachix authentication token'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: ${{ inputs.depth }}
+        submodules: recursive
+        token: ${{ inputs.gh-access-token }}
+
+    - uses: de-vri-es/setup-git-credentials@v2
+      with:
+        credentials: ${{ inputs.git-credentials }}
+
+    - name: Check if flake.nix exists
+      id: check-flake
+      shell: bash
+      run: |
+        if [ -f "flake.nix" ]; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Check for preinstalled binaries
+      id: check-binaries
+      shell: bash
+      run: |
+        if command -v nix >/dev/null 2>&1; then
+          echo "has_nix=true" >> $GITHUB_OUTPUT
+        else
+          echo "has_nix=false" >> $GITHUB_OUTPUT
+        fi
+        if command -v op >/dev/null 2>&1; then
+          echo "has_op=true" >> $GITHUB_OUTPUT
+        else
+          echo "has_op=false" >> $GITHUB_OUTPUT
+        fi
+        if command -v tailscale >/dev/null 2>&1; then
+          echo "has_tailscale=true" >> $GITHUB_OUTPUT
+        else
+          echo "has_tailscale=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Install 1Password CLI
+      if: ${{ inputs.op-service-account-token != '' && steps.check-binaries.outputs.has_op != 'true' }}
+      uses: 1password/install-cli-action@v1
+      with:
+        version: latest-beta
+
+    - name: Install Nix
+      if: steps.check-flake.outputs.exists == 'true' && runner.os != 'Windows' && steps.check-binaries.outputs.has_nix != 'true'
+      uses: cachix/install-nix-action@v31
+      with:
+        extra_nix_config: |
+          access-tokens = github.com=${{ inputs.gh-access-token }}
+
+    - name: Tailscale
+      if: ${{ inputs.tailnet == 'true' && steps.check-binaries.outputs.has_tailscale != 'true' }}
+      uses: tailscale/github-action@v3
+      with:
+        oauth-client-id: ${{ inputs.ts-oauth-client-id }}
+        oauth-secret: ${{ inputs.ts-oauth-secret }}
+        tags: tag:ci
+
+    - uses: DeterminateSystems/nix-installer-action@main
+      if: steps.check-flake.outputs.exists == 'true' && runner.os != 'Windows' && steps.check-binaries.outputs.has_nix != 'true'
+
+    - uses: DeterminateSystems/magic-nix-cache-action@main
+      if: steps.check-flake.outputs.exists == 'true' && runner.os != 'Windows'
+      with:
+        upstream-cache: ${{ inputs.upstream-cache }}
+
+    - uses: DeterminateSystems/flake-checker-action@main
+      if: steps.check-flake.outputs.exists == 'true' && runner.os != 'Windows'
+
+    - name: Setup Cachix
+      if: steps.check-flake.outputs.exists == 'true' && runner.os != 'Windows'
+      uses: cachix/cachix-action@v16
+      with:
+        name: ${{ inputs.cache-name }}
+        authToken: ${{ inputs.cachix-auth-token }}
+
+    - name: Enter devShell
+      if: steps.check-flake.outputs.exists == 'true' && runner.os != 'Windows'
+      uses: nicknovitski/nix-develop@v1
+      continue-on-error: true
+      with:
+        arguments: ${{ inputs.nix-args }}

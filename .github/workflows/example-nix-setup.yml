@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: runs-on=${{ github.run_id }}/runner=2cpu-linux-x64
     steps:
       # Method 1: Use the composite action directly in your job
       - name: Setup Nix Environment
@@ -34,7 +34,7 @@ jobs:
         run: make build
 
   test:
-    runs-on: ubuntu-24.04
+    runs-on: runs-on=${{ github.run_id }}/runner=2cpu-linux-x64
     steps:
       # Method 2: Minimal usage with defaults
       - name: Setup Nix Environment

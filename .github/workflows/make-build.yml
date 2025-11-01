@@ -34,7 +34,7 @@ env:
 jobs:
   build:
     name: 'Build'
-    runs-on: 'ubuntu-latest'
+    runs-on: runs-on=${{ github.run_id }}/runner=2cpu-linux-x64
     steps:
       - uses: devnw/workflows/.github/actions/nix-setup@main
         with:

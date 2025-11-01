@@ -4,26 +4,30 @@ on:
   # This workflow is meant to be called by other workflows
   workflow_call:
     secrets:
-      COMPASS_USER:             { required: true }
-      COMPASS_EMAIL:            { required: true }
-      COMPASS_API_KEY:          { required: true }
-      VULNERABILITY_SOURCE_ID:  { required: true }
-      GH_ACCESS_TOKEN:          { required: true }
+      COMPASS_USER: { required: true }
+      COMPASS_EMAIL: { required: true }
+      COMPASS_API_KEY: { required: true }
+      VULNERABILITY_SOURCE_ID: { required: true }
+      GH_ACCESS_TOKEN: { required: true }
 
 env:
-  COMPASS_USER:      ${{ secrets.COMPASS_USER }}
-  COMPASS_EMAIL:     ${{ secrets.COMPASS_EMAIL }}
-  COMPASS_API_KEY:   ${{ secrets.COMPASS_API_KEY }}
+  COMPASS_USER: ${{ secrets.COMPASS_USER }}
+  COMPASS_EMAIL: ${{ secrets.COMPASS_EMAIL }}
+  COMPASS_API_KEY: ${{ secrets.COMPASS_API_KEY }}
   VULNERABILITY_SOURCE_ID: ${{ secrets.VULNERABILITY_SOURCE_ID }}
-  GH_TOKEN:          ${{ secrets.GH_ACCESS_TOKEN }}
+  GH_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
 
 jobs:
   build:
     name: Push security‑advisory count to Compass
-    runs-on: ubuntu-latest
+    runs-on: runs-on=${{ github.run_id }}/runner=2cpu-linux-x64
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: devnw/workflows/.github/actions/nix-setup@main
+        with:
+          git-credentials: ${{ secrets.GIT_CREDENTIALS }}
+          gh-access-token: ${{ secrets.GH_ACCESS_TOKEN }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       # ──────────────────────────────────────────────────────────────
       # 1. Count published security advisories in the current repo

@@ -7,7 +7,7 @@ on:
       flake:
         required: true
         type: string
-        default: '.'
+        default: "."
       command:
         required: true
         type: string
@@ -38,7 +38,7 @@ on:
         required: true
 jobs:
   job:
-    name: '${{ inputs.job }}'
+    name: "${{ inputs.job }}"
     runs-on: nixos
     permissions:
       contents: write
@@ -74,13 +74,13 @@ jobs:
         uses: cachix/cachix-action@v16
         with:
           name: oss-devnw
-          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
       - uses: de-vri-es/setup-git-credentials@v2
         with:
           credentials: ${{secrets.GIT_CREDENTIALS}}
 
-      - name: '${{ inputs.job }}'
+      - name: "${{ inputs.job }}"
         run: |
           nix develop ${{ inputs.flake }} \
              --accept-flake-config --refresh --command ${{ inputs.command }}

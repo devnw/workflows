@@ -64,7 +64,7 @@ jobs:
           go run github.com/robertkrimen/godocdown/godocdown@latest . > ${{ secrets.DOCS_LOCATION }}/package.md
 
       - name: Create or update pull request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GH_ACCESS_TOKEN }}
           commit-message: "docs(${{ secrets.DOCS_LOCATION }}/package.md): update package documentation"

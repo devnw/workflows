@@ -61,7 +61,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: DeterminateSystems/nix-installer-action@main
@@ -86,14 +86,14 @@ jobs:
              --accept-flake-config --refresh --command ${{ inputs.command }}
 
       - name: Upload Outputs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           if-no-files-found: ignore
           name: coverage
           path: coverage.txt
 
       - name: Upload Fuzz Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           if-no-files-found: ignore
           name: fuzz-results

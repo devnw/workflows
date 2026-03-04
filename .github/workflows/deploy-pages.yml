@@ -50,14 +50,14 @@ jobs:
 
       - name: Setup Go (if go.mod present)
         if: ${{ hashFiles('go.mod') != '' }}
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: true
 
       - name: Setup Python (if pyproject.toml or requirements*.txt present)
         if: ${{ hashFiles('pyproject.toml') != '' || hashFiles('requirements.txt') != '' || hashFiles('requirements-dev.txt') != '' }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -92,7 +92,7 @@ jobs:
 
       - name: Setup Node.js (if package.json present)
         if: ${{ hashFiles('package.json') != '' }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: ${{ (hashFiles('pnpm-lock.yaml') != '' && 'pnpm') || (hashFiles('yarn.lock') != '' && 'yarn') || (hashFiles('package-lock.json') != '' && 'npm') || '' }}
@@ -150,7 +150,7 @@ jobs:
           cat summary.txt
 
       - name: Upload environment summary artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: environment-summary
           path: summary.txt
@@ -172,7 +172,7 @@ jobs:
           cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       - name: Upload doc-pages artifacts
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           name: github-pages
           path: ${{ steps.docs.outputs.site_dir }}

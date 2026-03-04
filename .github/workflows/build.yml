@@ -65,13 +65,13 @@ jobs:
         run: nix develop --accept-flake-config --command make build
 
       - name: Upload Test Coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: coverage.txt
 
       - name: Upload Fuzz Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fuzz-results
           path: testdata/fuzz
